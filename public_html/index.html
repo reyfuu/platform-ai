@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ProdPilot — asisten konten sosmed</title>
+  <meta name="description" content="AI Content Automation Platform untuk Multi-Brand" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Design system: Clean SaaS (selaras dengan prototype content-engine) — lihat DESIGN.md */
+    :root{
+      --bg:#fbfbfa;--bg-2:#f3f4f2;--card:#fff;--ink:#14181f;--ink-2:#5a626f;--ink-3:#8b94a1;
+      --line:#eaecef;--line-2:#dbdee4;--pine:#014bdf;--pine-dark:#0139ab;--pine-soft:#e8eefd;
+      --serif:'Bricolage Grotesque','Inter',-apple-system,'Segoe UI',sans-serif;
+      --sans:'Inter',-apple-system,'Segoe UI',sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);letter-spacing:-.006em;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    .font-serif-display{font-family:var(--serif);font-weight:800;letter-spacing:-.035em}
+    .font-serif-em{font-family:var(--serif);font-weight:800;color:var(--pine)}
+    .ico{display:inline-flex;align-items:center;justify-content:center;flex:none;line-height:0}
+    .ico svg{width:1.05em;height:1.05em}
+    .ce-topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:12px clamp(16px,4vw,44px);background:rgba(251,251,250,.8);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)}
+    .ce-logo{font-family:var(--serif);font-weight:800;font-size:19px;letter-spacing:-.03em;display:inline-flex;align-items:center;gap:3px}
+    .ce-logo-dot{color:var(--pine)}
+    .ce-tagline{font-size:12.5px;color:var(--ink-3)}
+    .flex-1{flex:1}
+    .ce-badge-pine{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;background:var(--pine-soft);color:var(--pine)}
+    .ce-kicker{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;background:var(--pine-soft);color:var(--pine);border:1px solid #cfddfb}
+    .ce-hero{max-width:60rem;margin:0 auto;padding:clamp(28px,6vw,60px) 20px 104px;text-align:center}
+    .ce-hero h1{margin:24px auto 0;max-width:46rem;font-size:clamp(38px,6.6vw,66px);line-height:1.08}
+    .ce-lead{margin:18px auto 0;max-width:36rem;font-size:clamp(16px,2.2vw,19px);line-height:1.55;color:var(--ink-2)}
+    .ce-note{margin-top:14px;font-size:12.5px;color:var(--ink-3)}
+    .ce-cta-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:30px}
+    .ce-btn{display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:13px 24px;font-size:15px;font-weight:600;letter-spacing:-.01em;cursor:pointer;border:1px solid transparent;text-decoration:none;transition:background .15s ease,border-color .15s ease}
+    .ce-btn-primary{background:var(--pine);color:#fff}
+    .ce-btn-primary:hover{background:var(--pine-dark)}
+    .ce-feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:52px}
+    @media(min-width:640px){.ce-feat-grid{grid-template-columns:repeat(5,1fr)}}
+    .ce-feat{border-radius:12px;padding:20px 16px;text-align:center;background:var(--card);border:1px solid var(--line)}
+    .ce-feat .e{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:11px;background:var(--pine-soft);color:var(--pine)}
+    .ce-feat .e svg{width:21px;height:21px}
+    .ce-feat b{display:block;margin-top:12px;font-size:13.5px;letter-spacing:-.01em}
+    .ce-feat span{display:block;margin-top:3px;font-size:11.5px;line-height:1.45;color:var(--ink-3)}
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Vue 3 via CDN — tanpa build step, deploy cukup upload file ini -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    // ikon garis (SVG stroke, gaya Lucide) — pengganti emoji, selaras app.html
+    const PATHS = {
+      film: 'M3 4h18v16H3zM8 4v16M16 4v16M3 9h5M16 9h5M3 15h5M16 15h5',
+      carousel: 'M8 5h8v14H8zM5.5 7.5v9M2.5 9.5v5M18.5 7.5v9M21.5 9.5v5',
+      pen: 'M12 19l7-7a2.1 2.1 0 0 0-3-3l-7 7-1 4 4-1ZM15 6l3 3',
+      calendar: 'M3 4.5h18v16H3zM3 9h18M8 3v3M16 3v3',
+      search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM21 21l-4.3-4.3',
+      bolt: 'M13 2 4 14h7l-1 8 9-12h-7l1-8Z',
+    };
+    const FEATURES = [
+      ['film', 'Script Reels & TikTok', '3 hook + adegan + CTA, tinggal shoot'],
+      ['carousel', 'Carousel + preview', 'slide per slide, langsung kelihatan jadinya'],
+      ['pen', 'Caption & hashtag', 'panjang, pendek, 5 hook cadangan'],
+      ['calendar', 'Ide seminggu', '7 hari terisi, rasio 80/20 sehat'],
+      ['search', 'Review & kompetitor', 'analisis asli dari caption-mu'],
+    ];
+
+    const Icon = {
+      props: ['name'],
+      template: `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path :d="path" /></svg></span>`,
+      computed: { path() { return PATHS[this.name]; } },
+    };
+
+    createApp({
+      components: { Icon },
+      data: () => ({ features: FEATURES }),
+      template: `
+        <main style="min-height:100vh">
+          <header class="ce-topbar">
+            <span class="ce-logo">Content<span class="ce-logo-dot">•</span>Engine</span>
+            <span class="ce-tagline" style="display:none">konten jadi, mikirnya nggak pake lama</span>
+            <span class="flex-1"></span>
+            <span class="ce-badge-pine"><Icon name="bolt" /> instan</span>
+          </header>
+          <div class="ce-hero">
+            <span class="ce-kicker"><Icon name="bolt" /> Gratis · tanpa daftar · langsung jadi</span>
+            <h1 class="font-serif-display">Konten sosmed yang <span class="font-serif-em">kamu banget</span> — dalam hitungan detik.</h1>
+            <p class="ce-lead">Ceritakan brand-mu sekali (3 menit). Habis itu tiap hari tinggal klik: script video, carousel, caption + hashtag, storyboard, sampai riset kompetitor.</p>
+            <div class="ce-cta-row">
+              <a class="ce-btn ce-btn-primary" href="/app.html">Mulai — ceritain brand-ku →</a>
+            </div>
+            <p class="ce-note">Aplikasi lengkap jalan tanpa server. Fitur riset kompetitor & cross-post butuh backend Laravel aktif.</p>
+            <div class="ce-feat-grid">
+              <div class="ce-feat" v-for="f in features" :key="f[1]">
+                <span class="e"><Icon :name="f[0]" /></span>
+                <b>{{ f[1] }}</b>
+                <span>{{ f[2] }}</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      `,
+    }).mount('#app');
+  </script>
+</body>
+</html>

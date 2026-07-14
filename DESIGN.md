@@ -9,8 +9,8 @@ Sengaja menjauh dari look "vibecoding" / template AI generik (gradien ungu, glas
 sebagai ikon, tombol offset-shadow mainan).
 
 Implementasi: CSS variables di `prototype/content-engine.html` (blok `:root`), disinkron ke
-`apps/web/public/app.css` lewat `node prototype/build-app.mjs`. Landing Next.js pakai token yang
-sama di `apps/web/app/globals.css`.
+`public_html/app.css` lewat `node prototype/build-app.mjs`. Landing Vue (`public_html/index.html`)
+pakai token yang sama inline.
 
 ## Prinsip color theory
 
@@ -99,4 +99,4 @@ Hemat & halus: `rise` (fade+geser 14px) saat view masuk, `pop` untuk slide/check
    otomatis dikonversi — pastikan glyph-nya ada di `EMOJI_ICON`.
 3. Display pakai `--serif` (Bricolage), teks lain `--sans` (Inter).
 4. Flat: border garis rambut, shadow halus, radius sesuai skala. Tanpa offset-shadow/grain.
-5. Setelah ubah prototype: `node prototype/build-app.mjs` untuk sinkron ke `apps/web/public/`.
+5. Setelah ubah prototype: `node prototype/build-app.mjs` untuk sinkron ke `public_html/`.

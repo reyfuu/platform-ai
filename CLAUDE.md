@@ -9,33 +9,34 @@ Menghasilkan script Reels/TikTok, carousel, caption + hashtag, storyboard, ide m
 (review akun IG & perbandingan kompetitor). Semua output berbahasa Indonesia, menyesuaikan voice
 brand, dan wajib lolos aturan aman (BPOM untuk skincare, halal untuk F&B, dst).
 
-## Dua permukaan — jangan tertukar
+## Struktur monorepo (deploy shared hosting)
 
-1. **`prototype/content-engine.html`** — **produk utama saat ini**. Aplikasi satu file, jalan di
+1. **`prototype/content-engine.html`** — **produk utama & sumber**. Aplikasi satu file, jalan di
    browser tanpa server & tanpa API key. Semua konten dirakit oleh mesin generator lokal
    deterministik (profil brand + bank copywriting + pola hook). **Di sinilah pekerjaan fitur &
-   UX terjadi.** Salinannya disajikan web app di `apps/web/public/app.html`.
-2. **`apps/`** — aplikasi penuh (skeleton): `api` (NestJS + Prisma + Postgres) dan `web`
-   (Next.js App Router). Home web = **landing**, lalu chat workspace di belakang tombol
-   (butuh API jalan). Ini jalur produksi jangka panjang; belum sekaya prototype.
+   UX terjadi.**
+2. **`public_html/`** — frontend static siap-upload: `index.html` (landing Vue via CDN) +
+   `app.html`/`app.js`/`app.css` (hasil build dari prototype via `prototype/build-app.mjs`).
+   Inilah yang di-upload ke document root shared hosting.
+3. **Root repo = aplikasi Laravel 13** (`app/`, `routes/`, `config/`, dst). 4 endpoint stateless
+   untuk riset & publish (scrape IG/TikTok/YouTube publik + cross-post). Tanpa DB/auth/queue.
+   Opsional — konten generate 100% tanpa ini. **Docroot = `public_html/`** (bukan `public/`; diset
+   `usePublicPath` di `bootstrap/app.php`) — frontend static + `index.php` Laravel jadi satu.
 
-> Kalau tugasnya "tambah/ubah fitur konten", target defaultnya **prototype**, lalu sinkronkan
-> salinan ke `apps/web/public/app.html`. Kalau tugasnya "backend/DB/auth/API", target `apps/`.
+> Tugas "tambah/ubah fitur konten" → target **prototype**, lalu `node prototype/build-app.mjs`
+> untuk sinkron ke `public_html/`. Tugas "riset/scrape/publish/API" → edit `app/`, `routes/api.php`.
+> Deploy lengkap: [DEPLOY-SHARED-HOSTING.md](DEPLOY-SHARED-HOSTING.md).
 
 ## Perintah
 
 ```bash
-# Prototype: cukup buka file-nya di browser (double-click). Tanpa build.
+# Prototype: buka file-nya di browser (double-click). Tanpa build.
+node prototype/build-app.mjs   # sinkron prototype → public_html/app.{html,js,css}
 
-# Aplikasi penuh (butuh deps ter-install + Postgres):
-npm install                 # workspaces: apps/api + apps/web
-npm run db:setup            # prisma generate + migrate + seed (apps/api)
-npm run dev                 # api (port 4000-an) + web (port 3000) via concurrently
-npm run build               # build api lalu web
-
-# Web saja:
-npm run dev -w @prodpilot/web
-npx tsc --noEmit            # typecheck (dari apps/web)
+# Backend Laravel (di root repo — butuh PHP 8.2+ & Composer):
+composer install
+php artisan serve --port=4000  # API di http://127.0.0.1:4000/api/v1/...
+php verify.php                 # self-check logika scraper (tanpa jaringan)
 ```
 
 ## Menguji prototype (tanpa framework test)
@@ -87,16 +88,16 @@ sistem visual di [DESIGN.md](DESIGN.md).
 - **Kualitas konten = prioritas.** Hook di 3 detik pertama, satu CTA, rasio pillar 80/20, hook
   punya alasan "kenapa works", tiap hasil punya catatan pembelajaran.
 - **Desain**: pasir + pinus + koral, serif Fraunces, hindari look template AI generik (gradien
-  ungu, glassmorphism). Ikuti token di [DESIGN.md](DESIGN.md). Untuk web app, token ada di
-  `apps/web/app/globals.css`.
+  ungu, glassmorphism). Ikuti token di [DESIGN.md](DESIGN.md). Token landing ada inline di
+  `public_html/index.html`.
 - **Privasi**: data user disimpan di localStorage browser saja; tidak dikirim ke mana-mana.
 
 ## Setelah mengubah prototype
 
-Sinkronkan salinan yang disajikan web app:
+Sinkronkan ke frontend static yang di-deploy:
 
 ```bash
-cp prototype/content-engine.html apps/web/public/app.html
+node prototype/build-app.mjs   # → public_html/app.{html,js,css}
 ```
 
 ## Git

@@ -132,38 +132,42 @@ Ditutup dengan orkestrasi end-to-end, scheduler/publish, report ke klien, lalu p
 
 ## Arsitektur (monorepo)
 
+Ditargetkan untuk **shared hosting** — frontend static + backend PHP, tanpa Node/Postgres/Redis.
+
 ```
-apps/
-  api/        NestJS + Prisma + BullMQ     REST API + worker generator
-  web/        Next.js + Tailwind            chat-first UI
-prototype/    content-engine.html          standalone (double-click, mode demo)
+(root)        Laravel 13 (app/ routes/     4 endpoint stateless: scrape IG/TikTok/YouTube + cross-post
+              config/ vendor/ …)             aplikasi di ATAS docroot
+public_html/  index.html (landing Vue)     DOCUMENT ROOT (cPanel): frontend + entry Laravel
+              app.{html,js,css}            aplikasi lengkap (build dari prototype)
+              index.php .htaccess          entry + rewrite Laravel → satu domain, tanpa CORS
+prototype/    content-engine.html          SUMBER app (double-click, mode demo, tanpa server)
 docs/         PRD, tech spec, handbook, panduan dev
-docker-compose.yml                          Postgres + Redis (dev)
 ```
 
-> **Dua jalur:** `prototype/` untuk uji coba cepat sekarang; `apps/` jalur produksi
-> (multi-user, data tersimpan di server) untuk dikembangkan.
+> **Dua jalur:** `prototype/` (di-build ke `public_html/`) = produk utama, jalan penuh di browser.
+> Root repo = Laravel API opsional untuk riset kompetitor & publish. Deploy: [DEPLOY-SHARED-HOSTING.md](DEPLOY-SHARED-HOSTING.md).
+>
+> Stack lama (NestJS `apps/api` + Next.js `apps/web` + Postgres/Redis) sudah **diganti** oleh
+> Laravel + frontend static di atas. Baris ✅ pada tabel Status merujuk stack lama tersebut.
 
 ---
 
 ## Menjalankan secara lokal
 
-Ringkas:
-
 ```bash
-docker compose up -d        # Postgres :5432, Redis :6379
-npm install                 # workspaces (root)
+# Frontend: build dari prototype → public_html, lalu buka di browser
+node prototype/build-app.mjs
+open public_html/index.html        # atau app.html langsung
 
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.local.example apps/web/.env.local
-
-npm run db:setup            # prisma generate + migrate + seed
-npm run dev:api             # http://localhost:4000/api/v1
-npm run dev:web             # http://localhost:3000
+# Backend Laravel (di root repo — butuh PHP 8.2+ & Composer)
+composer install
+cp .env.example .env && php artisan key:generate   # kalau .env belum ada
+php artisan serve --port=4000      # http://127.0.0.1:4000/api/v1/...
+php verify.php                     # self-check logika scraper (tanpa jaringan)
 ```
 
-Seed mencetak **API token** (`dev-token-123`) dan **brand id** contoh. Panduan lengkap +
-smoke test + daftar endpoint ada di **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
+Sambungkan frontend → backend: buka app → ⚙️ → **Backend Riset** → isi `http://localhost:4000`.
+Panduan deploy shared hosting: **[DEPLOY-SHARED-HOSTING.md](DEPLOY-SHARED-HOSTING.md)**.
 
 ---
 

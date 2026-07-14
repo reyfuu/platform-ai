@@ -1,116 +1,76 @@
-# Development — Sprint 1 Scaffold
+# Development — Backend Laravel + Frontend static
 
-Monorepo (npm workspaces):
+Monorepo untuk deploy shared hosting (tanpa Node/Postgres/Redis di server):
 
 ```
-apps/
-  api/   NestJS + Prisma + BullMQ   (REST API + job worker)
-  web/   Next.js + Tailwind          (chat-first UI)
-docs/    PRD, tech spec, dokumen ini
-docker-compose.yml   Postgres + Redis untuk dev lokal
+(root)        Laravel 13           API opsional: scrape IG/TikTok/YouTube + cross-post (docroot = public_html/)
+prototype/    content-engine.html   SUMBER app (double-click, jalan di browser)
+public_html/  index.html + app.*    frontend static (hasil build dari prototype)
+docs/         PRD, tech spec, dokumen ini
 ```
 
-## Yang sudah ada
+> **Stack lama NestJS + Next.js + Prisma/Postgres sudah dihapus.** Semua generate konten
+> sekarang jalan 100% di browser (`prototype`/`public_html`). Backend Laravel cuma untuk fitur
+> riset kompetitor & cross-post. Deploy: [../DEPLOY-SHARED-HOSTING.md](../DEPLOY-SHARED-HOSTING.md).
 
-- **Auth** — Bearer token = `User.apiToken` (`AuthGuard`).
-- **Multi-tenant** — semua query ter-scope ke `orgId`.
-- **Org/Brand/User** — model + endpoint `GET /me`, CRUD brand dasar + `category`/`profile` intake.
-- **Brand Voice Profile & Brand Kit** — sudah di schema + diisi oleh seed.
-- **Chat shell** — `Conversation`/`Message`, kirim pesan → deteksi jenis output → buat Job.
-- **Job queue** — BullMQ (`agent-jobs`) + worker generator (`JobsProcessor`).
-- **Content Engine (otak)** — `src/content` (playbook + compliance + generators + prompt builder)
-  & `src/llm` (Anthropic caller + mode demo). Worker merakit system prompt (profil brand +
-  playbook + compliance), memanggil LLM, menyimpan hasil (teks + JSON) & menampilkannya di chat.
-
-**Generator yang aktif:** script · carousel · storyboard · caption · ide mingguan.
-
-- **Brand Voice "training" dari Instagram** — `src/instagram` (scrape post publik via **Apify**,
-  set `APIFY_TOKEN`) + agent `BRANDVOICE`: analisis konten IG / contoh caption → ekstrak voice
-  profile (nada, sapaan, frasa khas, contoh caption asli) → tersimpan di `BrandVoiceProfile` +
-  `Brand.profile` → **otomatis disuntik ke semua generate berikutnya**.
-  - Via chat: `"Pelajari brand dari IG @brandku"`.
-  - Via API: `POST /brands/:id/voice-profile` body `{ "igHandle": "@brandku" }` atau
-    `{ "samples": ["caption 1", "caption 2"] }` → `202 { jobId }` → poll `GET /jobs/:id`.
-  - Tanpa `APIFY_TOKEN`, scraping nonaktif — kirim `samples` manual.
-  - Catatan: hanya data publik; hormati ToS platform (PRD §14). Ini ekstraksi voice + few-shot,
-    bukan fine-tuning model.
-
-> Tanpa `ANTHROPIC_API_KEY` worker jalan di **mode demo** (output contoh) — alur tetap bisa diuji.
-> Pilar berat (Research/Meta Ads, desain Canva, Video Higgsfield) = **Fase 2+**.
-
-## Prasyarat
-
-- Node.js 20+
-- Docker (untuk Postgres + Redis), atau Postgres/Redis lokal.
-
-## Langkah jalan (lokal)
+## Frontend
 
 ```bash
-# 1. Infra
-docker compose up -d            # postgres:5432, redis:6379
-
-# 2. Dependencies (root, workspaces)
-npm install
-
-# 3. Env
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.local.example apps/web/.env.local
-# (opsional) isi ANTHROPIC_API_KEY di apps/api/.env untuk hasil sungguhan; kosong = mode demo
-
-# 4. DB: generate client, migrate, seed
-npm run prisma:generate -w @prodpilot/api
-npm run prisma:migrate  -w @prodpilot/api     # buat tabel
-npm run db:seed         -w @prodpilot/api     # org + user + brand contoh
-
-# 5. Jalankan
-npm run dev:api                 # http://localhost:4000/api/v1
-npm run dev:web                 # http://localhost:3000
+node prototype/build-app.mjs       # content-engine.html → public_html/app.{html,js,css}
+open public_html/index.html        # landing Vue (CDN) → tombol utama buka /app.html
 ```
 
-Seed mencetak **API token** (`dev-token-123`) dan **brand id** contoh.
+Tanpa build tools — `index.html` pakai Vue 3 via CDN, sisanya static. Edit fitur di
+`prototype/content-engine.html` lalu jalankan build untuk sinkron.
 
-## Cek cepat (smoke test)
+## Backend Laravel
 
+### Prasyarat
+- PHP 8.2+ & Composer
+
+### Jalan lokal (dari root repo)
 ```bash
-TOKEN=dev-token-123
-BASE=http://localhost:4000/api/v1
-
-curl $BASE/health
-curl -H "Authorization: Bearer $TOKEN" $BASE/me
-curl -H "Authorization: Bearer $TOKEN" $BASE/brands
-
-# Buat percakapan + kirim pesan (ganti BRAND_ID dari /brands)
-curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"brandId":"BRAND_ID","title":"Tes"}' $BASE/conversations
-
-curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"content":"Buatkan script Reels 30 detik promo bundling"}' $BASE/conversations/CONVO_ID/messages
-
-# Cek status job (jobId dari respons di atas)
-curl -H "Authorization: Bearer $TOKEN" $BASE/jobs/JOB_ID
+composer install
+cp .env.example .env && php artisan key:generate   # kalau .env belum ada
+php artisan serve --port=4000
 ```
 
-Di UI: buka http://localhost:3000 → pilih brand di kanan atas → ketik perintah di chat.
+Tanpa database — 4 endpoint ini stateless (tanpa auth/DB/queue). Kredensial publish dikirim
+per-request dari browser, tidak disimpan.
 
-## Endpoint Sprint 1
+### Test
+```bash
+php verify.php                     # self-check logika scraper murni (tanpa jaringan)
+```
+
+### Smoke test (butuh jaringan)
+```bash
+BASE=http://127.0.0.1:4000/api/v1
+
+curl "$BASE/youtube/MrBeast"       # subscriber + video terbaru (views)
+curl "$BASE/tiktok/tiktok"         # agregat TikTok publik
+curl "$BASE/ig/natgeo"             # stats IG (bisa 502 kalau IG rate-limit — normal)
+
+# cross-post dry-run (tanpa panggil API asli)
+curl -X POST "$BASE/publish/all" -H 'content-type: application/json' \
+  -d '{"platforms":["tiktok"],"caption":"halo","mediaUrl":"https://x.com/v.mp4","mediaType":"video","dryRun":true,"creds":{"tiktokToken":"t"}}'
+```
+
+## Endpoint backend
 
 | Method | Path | Keterangan |
 |---|---|---|
-| GET | `/health` | status API + DB (publik) |
-| GET | `/me` | user + org saat ini |
-| GET | `/brands` | daftar brand di org |
-| POST | `/brands` | buat brand |
-| GET | `/brands/:id` | detail brand (+ voice, kit, kompetitor) |
-| POST | `/conversations` | buat percakapan untuk brand |
-| GET | `/conversations?brandId=` | daftar percakapan brand |
-| GET | `/conversations/:id/messages` | pesan dalam percakapan |
-| POST | `/conversations/:id/messages` | kirim pesan → enqueue job |
-| POST | `/brands/:id/voice-profile` | "training" voice dari IG handle / samples → `202 {jobId}` |
-| GET | `/jobs/:id` | status & output job |
+| GET | `/api/v1/ig/{handle}` | stats + engagement Instagram publik (502 kalau diblok/privat) |
+| GET | `/api/v1/tiktok/{handle}` | agregat TikTok publik (followers, total likes, jumlah video) |
+| GET | `/api/v1/youtube/{handle}` | subscriber + video terbaru (views) |
+| POST | `/api/v1/publish/all` | cross-post IG/FB/TikTok; kredensial per-request; `dryRun` didukung |
 
-## Berikutnya (Sprint 2+)
+## Sambungkan frontend → backend
 
-MVP = **Content Engine** (lihat [Handbook](CONTENT_ENGINE_HANDBOOK.md) & [TECH_SPEC_MVP.md §11](TECH_SPEC_MVP.md)):
-Intake + Brand Profile → Prompt Engine (system prompt + playbook + compliance) → Generator inti (script + carousel copy) → Generator lengkap (storyboard/caption/ide) → Compliance & QA.
+Buka app (`public_html/app.html`) → ⚙️ → **Backend Riset** → isi URL backend (mis.
+`http://localhost:4000` lokal, `https://api.domainmu.com` produksi). App otomatis menambah `/api/v1`.
 
-> Pilar berat (Research/Meta Ads, desain Canva, Video Higgsfield) = **Fase 2+**.
+## Catatan jujur
+- Scraping dari IP shared hosting sering di-rate-limit/blok IG (paling sensitif). TikTok/YouTube
+  lebih toleran. UI sudah sediakan fallback "isi manual" saat sumber eksternal 502.
+- Publish butuh kredensial resmi (Meta Page Access Token, TikTok OAuth) yang diisi user di app.

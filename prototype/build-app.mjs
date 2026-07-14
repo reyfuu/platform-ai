@@ -3,9 +3,9 @@
  * build-app.mjs — sinkronkan prototype single-file ke versi web app "rapi".
  *
  * content-engine.html (standalone, punya <style> + <script> inline) dipecah jadi:
- *   apps/web/public/app.css    — semua CSS
- *   apps/web/public/app.js     — semua JS
- *   apps/web/public/app.html   — HANYA markup; me-link app.css & app.js
+ *   public_html/app.css    — semua CSS
+ *   public_html/app.js     — semua JS
+ *   public_html/app.html   — HANYA markup; me-link app.css & app.js
  *
  * app.html sengaja TIDAK punya tag <style> maupun <script> inline —
  * semuanya dipindah ke file eksternal (tempat yang biasa).
@@ -23,7 +23,7 @@ const ver = s => createHash('sha1').update(s).digest('hex').slice(0, 8);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, 'content-engine.html');
-const PUB = join(__dirname, '..', 'apps', 'web', 'public');
+const PUB = join(__dirname, '..', 'public_html');
 const OUT_HTML = join(PUB, 'app.html');
 const OUT_CSS = join(PUB, 'app.css');
 const OUT_JS = join(PUB, 'app.js');
