@@ -2,6 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// "/" tampilkan landing statis (public_html/index.html), bukan welcome Laravel.
+// Di produksi .htaccess (DirectoryIndex) menang duluan; route ini untuk `php artisan serve`.
+Route::get('/', fn () => response()->file(public_path('index.html')));
