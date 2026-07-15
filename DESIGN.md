@@ -1,7 +1,7 @@
 # DESIGN.md — Design System Content Engine
 
 Arah visual: **Clean SaaS** — terinspirasi produk seperti sandcastles.ai: latar near-white, teks
-charcoal, **satu aksen** (pine green), whitespace lega, flat & modern. Tipografi jadi bintang lewat
+charcoal, **satu aksen** (electric blue), whitespace lega, flat & modern. Tipografi jadi bintang lewat
 display grotesk mewah. **Nol emoji di UI** — semua ikon = garis SVG (stroke) yang konsisten. Emoji
 hanya boleh muncul di dalam **konten yang di-generate** (caption sosmed), bukan chrome aplikasi.
 
@@ -15,8 +15,8 @@ pakai token yang sama inline.
 ## Prinsip color theory
 
 - **1 hue netral + 1 aksen.** Netral = skala abu dingin (charcoal → slate → muted). Aksen tunggal =
-  **pine** (`#1C5B43`) untuk aksi, state aktif, dan hal positif. Tidak ada warna aksen kedua yang
-  bersaing.
+  **electric blue** (`#014BDF`) untuk aksi, state aktif, dan hal positif. Tidak ada warna aksen kedua
+  yang bersaing. (Token tetap bernama `--pine` demi kompatibilitas — isinya sekarang biru.)
 - **Semantik hemat.** Coral (atensi), gold (peringatan), red (destruktif) — hanya untuk makna, tidak
   pernah dekoratif. Jangan dua warna semantik dalam satu elemen.
 - **Kontras dulu.** Teks utama pada latar ≈ AAA (>12:1). Warna tidak pernah jadi satu-satunya penanda
@@ -32,13 +32,13 @@ pakai token yang sama inline.
 | `--ink` | `#14181F` | teks utama (charcoal), tab/pill aktif |
 | `--ink-2` / `--ink-3` | `#5A626F` / `#8B94A1` | teks sekunder / tersier |
 | `--line` / `--line-2` | `#EAECEF` / `#DBDEE4` | garis rambut / border kontrol |
-| `--pine` | `#1C5B43` | **aksen tunggal**: CTA, aktif, skor bagus, ikon fitur |
-| `--pine-dark` / `--pine-soft` | `#144330` / `#E8F1EC` | hover primary / latar aksen lembut |
+| `--pine` | `#014BDF` | **aksen tunggal** (electric blue): CTA, aktif, skor bagus, ikon fitur |
+| `--pine-dark` / `--pine-soft` | `#0139AB` / `#E8EEFD` | hover primary / latar aksen lembut (blue tint) |
 | `--coral` (+ `-dark`/`-soft`) | `#C6553A` | semantik atensi (hemat) |
 | `--gold` (+ `-soft`) | `#B07A16` | peringatan lembut |
 | `--red` (+ `-soft`) | `#C13B36` | destruktif (hapus) |
 
-Meter skor: <5 coral, 5–7.5 gold, >7.5 pine — **angka selalu ditampilkan**.
+Meter skor: <5 coral, 5–7.5 gold, >7.5 blue (`--pine`) — **angka selalu ditampilkan**.
 
 ## Tipografi (mewah, sans-first)
 
@@ -56,13 +56,13 @@ Meter skor: <5 coral, 5–7.5 gold, >7.5 pine — **angka selalu ditampilkan**.
 - **Flat.** Shadow dua level halus (`--sh-1` istirahat, `--sh-2` hover) berwarna ink-transparan
   dingin. **Tidak ada** offset-shadow taktil, **tidak ada** grain overlay, **tidak ada** translateY
   saat hover — feedback lewat perubahan warna latar/border.
-- Border = garis rambut 1px. Fokus input: ring pine `0 0 0 4px rgba(28,91,67,.13)`.
+- Border = garis rambut 1px. Fokus input: ring biru `0 0 0 4px rgba(1,75,223,.14)`.
 
 ## Sistem ikon (garis SVG — WAJIB, bukan emoji)
 
 - Sumber: objek `ICONS` (path Lucide-style, viewBox 24) + `svgIcon(name)` di `content-engine.html`.
-  Stroke **1.75** = kesan garis halus/mewah, `currentColor`, cap/join round. Landing punya set kecil
-  yang sama di `page.tsx` (komponen `Icon`).
+  Stroke **1.75** = kesan garis halus/mewah, `currentColor`, cap/join round. Landing Vue
+  (`public_html/index.html`) punya set kecil yang sama (fungsi `icon()` inline).
 - **Konversi otomatis**: `el()` + `iconifyStatic()` menyapu emoji di `textContent`/`html`/toast/markup
   statis → ikon. Emoji yang **kekenal** (`EMOJI_ICON`) jadi ikon; yang tak kenal **dibuang** supaya UI
   100% bebas emoji. Panah teks (`←` `→` `↗`) sengaja **tidak** disentuh (glyph tipografi, bukan emoji).
@@ -70,8 +70,8 @@ Meter skor: <5 coral, 5–7.5 gold, >7.5 pine — **angka selalu ditampilkan**.
   `day-card`, dst) dilewati → emoji di caption hasil generate tetap utuh.
 - **Tile ikon mewah**: ikon prominen (feature band, type-card, cat-card, result-head) duduk di kotak
   tint `--pine-soft` radius 11px → kesan premium, bukan glyph telanjang.
-- Menambah ikon: tambah entri `ICONS[name]` (path) lalu map `EMOJI_ICON['🙂'] = 'name'`. Untuk React,
-  tambah ke `PATHS` di `page.tsx`.
+- Menambah ikon: tambah entri `ICONS[name]` (path) lalu map `EMOJI_ICON['🙂'] = 'name'`. Untuk landing,
+  tambah set ikon inline di `public_html/index.html`.
 
 ## Komponen inti
 
